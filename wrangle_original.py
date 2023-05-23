@@ -4,6 +4,8 @@ from env import get_db_url
 import os
 
 
+from sklearn.model_selection import train_test_split
+
 # ----------------------------------------------------------------------------------
 def check_file_exists(fn, query, url):
     """
@@ -112,11 +114,93 @@ def get_split(df):
     random state = 123
     '''  
     # split your dataset
+    # 80/20
     train_validate, ts = train_test_split(df, test_size=.2, random_state=123)
+    # 75/25
     tr, val = train_test_split(train_validate, test_size=.25, random_state=123)
     
     return tr, val, ts
 
+# ----------------------------------------------------------------------------------
+# def scale_data(train,validate,test,to_scale):
+#     """
+#     to_scale = ['column1','column2','column3','column4','column5']
+#     """
+    
+#     #make copies for scaling
+#     train_scaled = train.copy()
+#     validate_scaled = validate.copy()
+#     test_scaled = test.copy()
+
+#     #scale them!
+#     #make the thing
+#     scaler = MinMaxScaler()
+
+#     #fit the thing
+#     scaler.fit(train[to_scale])
+
+#     #use the thing
+#     train_scaled[to_scale] = scaler.transform(train[to_scale])
+#     validate_scaled[to_scale] = scaler.transform(validate[to_scale])
+#     test_scaled[to_scale] = scaler.transform(test[to_scale])
+    
+#     return train_scaled, validate_scaled, test_scaled
+
+
+# ----------------------------------------------------------------------------------
+def get_Xs_ys_to_scale_baseline(tr_m, val_m, ts_m, target):
+    '''
+    tr = train
+    val = validate
+    ts = test
+    target = target value
+    '''
+
+    # Separate the features (X) and target variable (y) for the training set
+    X_tr, y_tr = tr_m.drop(columns=[target,'gender']), tr_m[target]
+    
+    # Separate the features (X) and target variable (y) for the validation set
+    X_val, y_val = val_m.drop(columns=[target,'gender']), val_m[target]
+    
+    # Separate the features (X) and target variable (y) for the test set
+    X_ts, y_ts = ts_m.drop(columns=[target,'gender']), ts_m[target]
+    
+    # Get the list of columns to be scaled
+    to_scale = X_tr.columns.tolist()
+    
+    # Calculate the baseline (mean) of the target variable in the training set
+    baseline = y_tr.mean()
+    
+    # Return the separated features and target variables, columns to scale, and baseline
+    return X_tr, X_val, X_ts, y_tr, y_val, y_ts, to_scale, baseline
+# ----------------------------------------------------------------------------------
+
+def scale_data(X,Xv,Xts,to_scale):
+    '''
+    X = X_train
+    Xv = X_validate
+    Xts = X_test
+    to_scale, is found in the get_Xs_ys_to_scale_baseline
+    '''
+    
+    #make copies for scaling
+    X_tr_sc = X.copy()
+    X_val_sc = Xv.copy()
+    X_ts_sc = Xts.copy()
+
+    #scale them!
+    #make the thing
+    scaler = MinMaxScaler()
+
+    #fit the thing
+    scaler.fit(X[to_scale])
+
+    #use the thing
+    X_tr_sc[to_scale] = scaler.transform(X[to_scale])
+    X_val_sc[to_scale] = scaler.transform(Xv[to_scale])
+    X_ts_sc[to_scale] = scaler.transform(Xts[to_scale])
+    
+    return X_tr_sc, X_val_sc, X_ts_sc
 # ----------------------------------------------------------------------------------
 # remove all outliers put each feature one at a time
 def outlier(df, feature, m=1.5):
@@ -160,6 +244,31 @@ def get_mallcustomer_data():
     df = pd.read_sql(sql_query, url)
     
     return df.set_index('customer_id')
+
+# ----------------------------------------------------------------------------------
+def get_iris_data():
+    # How to import a database from MySQL
+    url = get_db_url('iris_db')
+    query = '''
+    SELECT *
+    FROM species
+    '''
+    filename = 'iris.csv'
+    df = check_file_exists(filename, query, url)
+    
+#   # Define the desired column order
+#     new_column_order = ['bedrooms','bathrooms','area','yearbuilt','county','county_Orange','county_Ventura','property_value',]
+
+#     # Reindex the DataFrame with the new column order
+#     df = df.reindex(columns=new_column_order)
+
+#     # write the results to a CSV file
+#     df.to_csv('df_prep.csv', index=False)
+
+#     # read the CSV file into a Pandas dataframe
+#     prep_df = pd.read_csv('df_prep.csv')
+    
+    return df
 
 
 

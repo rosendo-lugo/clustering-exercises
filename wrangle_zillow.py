@@ -71,21 +71,37 @@ def nulls_by_col(df):
                     })
     
     return cols_missing
-
+ 
 # ----------------------------------------------------------------------------------
-def nulls_by_row(df, index_id = 'parcelid'):
-    """
-    """
+# def nulls_by_row2(df, index_id = 'customer_id'):
+#     """
+#     """
+#     num_missing = df.isnull().sum(axis=1)
+#     pct_miss = (num_missing / df.shape[1]) * 100
+#     row_missing = df.isnull().sum()
+    
+#     rows_missing = pd.DataFrame({'num_cols_missing': num_missing, 'percent_cols_missing': pct_miss, 'num_rows':row_missing})
+
+#     rows_missing = df.merge(rows_missing,
+#                         left_index=True,
+#                         right_index=True)[['num_cols_missing', 'percent_cols_missing','num_rows']].drop('index', axis=1)
+    
+#     return rows_missing #.sort_values(by='num_cols_missing', ascending=False)
+
+def nulls_by_row(df, index_id='customer_id'):
     num_missing = df.isnull().sum(axis=1)
     pct_miss = (num_missing / df.shape[1]) * 100
-    
-    rows_missing = pd.DataFrame({'num_cols_missing': num_missing, 'percent_cols_missing': pct_miss})
+    row_missing = num_missing.value_counts().sort_index()
 
-    rows_missing = df.merge(rows_missing,
-                        left_index=True,
-                        right_index=True).reset_index()[[index_id, 'num_cols_missing', 'percent_cols_missing']]
-    
-    return rows_missing.sort_values(by='num_cols_missing', ascending=False)
+    rows_missing = pd.DataFrame({
+        'num_cols_missing': num_missing,
+        'percent_cols_missing': pct_miss,
+        'num_rows': row_missing
+    }).reset_index()
+
+    result_df = df.merge(rows_missing, left_index=True, right_on='index').drop('index', axis=1)[['num_cols_missing', 'percent_cols_missing', 'num_rows']]
+
+    return result_df #[['num_cols_missing', 'percent_cols_missing', 'num_rows']]
 
 # ----------------------------------------------------------------------------------
 def get_object_cols(df):
